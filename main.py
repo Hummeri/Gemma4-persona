@@ -1,8 +1,13 @@
 import os
+# vram optimization 1
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True" # breaks down VRAM chunks to smaller ones
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from huggingface_hub import login
 from dotenv import load_dotenv
+
+# vram optimization 2
+torch.cuda.empty_cache() # Empty leftovers from last iteration.
 
 # 1. Safe Authentication
 # Loads the variables from the .env file into the environment
@@ -20,11 +25,12 @@ else:
 
 # 2. Hardware-Optimized Quantization
 # 4-bit NF4 Quantization ensures the model and KV cache fits easily in your 8GB VRAM [cite: 4]
-quantization_config = BitsAndBytesConfig(
+bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_compute_dtype=torch.bfloat16,
     bnb_4bit_use_double_quant=True,
-    bnb_4bit_quant_type="nf4"
+    bnb_4bit_quant_type="nf4",
+    llm_int8_enable_fp32_cpu_offload=True
 )
 
 # 3. Model Loading
@@ -35,7 +41,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
     device_map="auto",
-    quantization_config=quantization_config,
+    quantization_config=bnb_config,
     torch_dtype=torch.bfloat16
 )
 print("Model loaded successfully into VRAM!\n")
