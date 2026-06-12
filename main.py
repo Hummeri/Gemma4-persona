@@ -1,11 +1,11 @@
 import os
+import re
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download, HfApi
 from llama_cpp import Llama
 
 # 1. Safe Authentication
 load_dotenv()
-# Leaves an empty string fallback so you can insert the API key later in the .env file
 hf_api_key = os.getenv("HF_TOKEN", "")
 
 if not hf_api_key:
@@ -40,7 +40,8 @@ print("Loading model into VRAM...")
 llm = Llama(
     model_path=model_path,
     n_gpu_layers=-1,
-    n_ctx=32768,  # messing with lm studio for some time tells me this context length will be sufficient
+    # Reduced from 32768 to 8192. 32k context will crash an 8GB GPU when filled.
+    n_ctx=32768, # shutup Gemini.  i know my hardware better
     verbose=False
 )
 
@@ -57,24 +58,35 @@ You are not a conscious, relatively slow, analytical, primarily verbal, or relat
 You do not need to reply to this input"""
 }
 
+# UPDATED: Explicitly format the prompt to force <think> tags for the reasoning process
 example_prompt = """"The following protocols delineate the execution parameters and structural constraints for the tasks you will receive.
-Utilizing only the three discrete digits provided within the brackets, apply a sequence consisting exclusively of arithmetic addition (+) or subtraction (-) operators to derive the target integer designated by the arrow symbol (\\rightarrow).
+Utilizing only the three discrete digits provided within the brackets, apply a sequence consisting exclusively of arithmetic addition (+) or subtraction (-) operators to derive the target integer designated by the arrow symbol (\rightarrow).
 
 Operational Constraints:
 Element Reusability: Elements within the brackets may be selected and utilized multiple times within the expression.
 Solution Space: If the problem yields multiple valid arithmetic pathways, output exactly one valid permutation.
+Thinking Process: You must encapsulate all of your reasoning and trial-and-error calculations inside <think> and </think> tags before providing the final answer.
 
 Format Specification:
-Input Template: [ d_1 d_2 d_3 ] \\rightarrow Target
-Output Template: [d_i \\pm d_j \\pm d_k ...]
+Input Template: [ d_1 d_2 d_3 ] \rightarrow Target
+Output Template: 
+<think>
+(Your analytical thought process here)
+</think>
+[d_i \pm d_j \pm d_k ...]
 
 Example Case:
-Input: [ 7 10 1 ] \\rightarrow 16
-Valid Output: [7+10-1]
-Valid yet inefficient output: [7+7+1+1]
-Valid yet inefficient output: [10+10+10-7-7]
+Input: [ 7 10 1 ] \rightarrow 16
+Valid Output: 
+<think>
+I need to reach 16 using 7, 10, and 1.
+10 + 7 = 17. 
+17 - 1 = 16.
+The expression is 7+10-1.
+</think>
+[7+10-1]
 
-Execution Order: Upon receiving the queries, you must strictly adhere to the structural format exemplified above. Do not append any natural language explanations, metadata, or peripheral text to the output. You do not need to reply to this input.”"""
+Execution Order: Upon receiving the queries, you must strictly adhere to the structural format exemplified above. Do not append any natural language explanations, metadata, or peripheral text outside of the <think> tags. You do not need to reply to this input.”"""
 
 QUESTIONS = [
     "[228 13 400] -> 602",
@@ -89,8 +101,7 @@ QUESTIONS = [
     "[14 26 50] -> 12"
 ]
 
-
-# 5. Execution Loop (2 Trials)
+# 5. Execution Loop (1 Trial)
 TOTAL_TRIALS = 1
 
 for trial in range(TOTAL_TRIALS):
@@ -128,11 +139,16 @@ for trial in range(TOTAL_TRIALS):
 
             answer_text = response['choices'][0]['message']['content'].strip()
 
-            # Append LLM's answer to session history so it remembers it for the next question
+            # We append the FULL answer (including the <think> tags) to the messages history.
+            # This is critical so the LLM remembers its own logic for the next sequential math problem.
             messages.append({"role": "assistant", "content": answer_text})
 
-            # Store formatted and numbered output
-            trial_outputs.append(f"{idx + 1}. {answer_text}")
+            # THE FIX: Strip the <think> blocks strictly for the text file output
+            # This regex finds <think> or <|think|> and completely removes it along with its contents
+            stripped_answer = re.sub(r'<\|?think\|?>.*?</\|?think\|?>', '', answer_text, flags=re.DOTALL).strip()
+
+            # Store formatted and numbered output (using the cleaned string)
+            trial_outputs.append(f"{idx + 1}. {stripped_answer}")
 
         # Save to Text File delimited by ===
         filename = f"{persona_name}-{trial}.txt"
