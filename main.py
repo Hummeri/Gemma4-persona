@@ -13,18 +13,18 @@ if not hf_api_key:
 else:
     print("Authenticated successfully via .env file.")
 
-# 2. Download the Official QAT GGUF Model
-repo_id = "google/gemma-4-E4B-it-qat-q4_0-gguf"
+# 2. using unsloth q4km instead
+repo_id = "unsloth/gemma-4-E4B-it-GGUF"
 
 print(f"Connecting to {repo_id}...")
 api = HfApi()
 files = api.list_repo_files(repo_id=repo_id, token=hf_api_key)
 
-# Filter out the multi-modal projector to ensure we grab the actual LLM weights
-gguf_files = [f for f in files if f.endswith('.gguf') and 'mmproj' not in f.lower()]
+# Strictly filter for the q4_k_m quantized file
+gguf_files = [f for f in files if 'q4_k_m' in f.lower() and f.endswith('.gguf')]
 
 if not gguf_files:
-    raise ValueError(f"No valid LLM .gguf files found in the repository: {repo_id}")
+    raise ValueError(f"No Q4_K_M .gguf file found in the repository: {repo_id}")
 
 filename = gguf_files[0]
 print(f"Downloading/Locating the main language model: {filename}...")
