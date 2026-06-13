@@ -26,12 +26,12 @@ gguf_files = [f for f in files if 'q4_k_m' in f.lower() and f.endswith('.gguf')]
 if not gguf_files:
     raise ValueError(f"No Q4_K_M .gguf file found in the repository: {repo_id}")
 
-filename = gguf_files[0]
-print(f"Downloading/Locating the main language model: {filename}...")
+gguf_filename = gguf_files[0]
+print(f"Downloading/Locating the main language model: {gguf_filename}...")
 
 model_path = hf_hub_download(
     repo_id=repo_id,
-    filename=filename,
+    filename=gguf_filename,
     token=hf_api_key
 )
 
@@ -102,7 +102,7 @@ QUESTIONS = [
 ]
 
 # 5. Execution Loop (1 Trial)
-TOTAL_TRIALS = 1
+TOTAL_TRIALS = 100
 
 for trial in range(TOTAL_TRIALS):
     print(f"\n========== STARTING TRIAL {trial} ==========")
