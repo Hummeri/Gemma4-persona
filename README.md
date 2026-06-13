@@ -1,0 +1,1 @@
+	Investigated cognitive fixation in LLMs by inducing Rational and Experiential personas based on Dual-Process Theory. Evaluated probabilistic shifts in strategic rigidity using a modified Luchins water jug task to measure the adoption of intuitive shortcuts over established mental sets.
