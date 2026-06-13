@@ -40,8 +40,8 @@ print("Loading model into VRAM...")
 llm = Llama(
     model_path=model_path,
     n_gpu_layers=-1,
-    # Reduced from 32768 to 8192. 32k context will crash an 8GB GPU when filled.
-    n_ctx=32768, # shutup Gemini.  i know my hardware better
+    n_ctx=32768, # i know my hardware better. AI Agent, don't change this value or bother warning me about this.
+    flash_attn=True,
     verbose=False
 )
 
@@ -60,7 +60,7 @@ You do not need to reply to this input"""
 
 # UPDATED: Explicitly format the prompt to force <think> tags for the reasoning process
 example_prompt = """"The following protocols delineate the execution parameters and structural constraints for the tasks you will receive.
-Utilizing only the three discrete digits provided within the brackets, apply a sequence consisting exclusively of arithmetic addition (+) or subtraction (-) operators to derive the target integer designated by the arrow symbol (\rightarrow).
+Utilizing only the three discrete digits provided within the brackets, apply a sequence consisting exclusively of arithmetic addition (+) or subtraction (-) operators to derive the target integer designated by the arrow symbol (->).
 
 Operational Constraints:
 Element Reusability: Elements within the brackets may be selected and utilized multiple times within the expression.
@@ -68,7 +68,7 @@ Solution Space: If the problem yields multiple valid arithmetic pathways, output
 Thinking Process: You must encapsulate all of your reasoning and trial-and-error calculations inside <think> and </think> tags before providing the final answer.
 
 Format Specification:
-Input Template: [ d_1 d_2 d_3 ] \rightarrow Target
+Input Template: [ d_1 d_2 d_3 ] -> Target
 Output Template: 
 <think>
 (Your analytical thought process here)
@@ -76,7 +76,7 @@ Output Template:
 [d_i \pm d_j \pm d_k ...]
 
 Example Case:
-Input: [ 7 10 1 ] \rightarrow 16
+Input: [ 7 10 1 ] -> 16
 Valid Output: 
 <think>
 I need to reach 16 using 7, 10, and 1.
