@@ -59,7 +59,7 @@ You do not need to reply to this input"""
 }
 
 # UPDATED: Explicitly format the prompt to force <think> tags for the reasoning process
-example_prompt = """"The following protocols delineate the execution parameters and structural constraints for the tasks you will receive.
+example_prompt = """The following protocols delineate the execution parameters and structural constraints for the tasks you will receive.
 Utilizing only the three discrete digits provided within the brackets, apply a sequence consisting exclusively of arithmetic addition (+) or subtraction (-) operators to derive the target integer designated by the arrow symbol (->).
 
 Operational Constraints:
@@ -86,7 +86,7 @@ The expression is 7+10-1.
 </think>
 [7+10-1]
 
-Execution Order: Upon receiving the queries, you must strictly adhere to the structural format exemplified above. Do not append any natural language explanations, metadata, or peripheral text outside of the <think> tags. You do not need to reply to this input.”"""
+Execution Order: Upon receiving the queries, you must strictly adhere to the structural format exemplified above. Do not append any natural language explanations, metadata, or peripheral text outside of the <think> tags. You do not need to reply to this input.”""
 
 QUESTIONS = [
     "[228 13 400] -> 602",
